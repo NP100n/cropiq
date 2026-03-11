@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CropIQ</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --accent: #4ade80;
+    --accent2: #22d3ee;
+    --warn: #facc15;
+    --danger: #f87171;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: #2e3347;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* NAV */
+  nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+  .nav-logo { font-size: 1.3rem; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .nav-logo span { color: var(--text); }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-btn { background: none; border: none; color: var(--muted); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+  .nav-btn:hover, .nav-btn.active { background: var(--surface2); color: var(--text); }
+  .nav-btn.active { color: var(--accent); }
+
+  /* PAGES */
+  .page { display: none; padding: 32px 24px; max-width: 1100px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* HEADINGS */
+  h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+  h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+  .subtitle { color: var(--muted); margin-bottom: 28px; font-size: 0.95rem; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .stat-value { font-size: 2rem; font-weight: 700; }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.blue { color: var(--accent2); }
+  .stat-value.yellow { color: var(--warn); }
+  .stat-value.red { color: var(--danger); }
+
+  /* FORMS */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 0.85rem; color: var(--muted); }
+  input, select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 0.95rem; outline: none; transition: border 0.2s; width: 100%; }
+  input:focus, select:focus { border-color: var(--accent); }
+  input::placeholder { color: #4a5268; }
+
+  /* BUTTONS */
+  .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #0f1117; }
+  .btn-primary:hover { background: #22c55e; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.8rem; padding: 6px 12px; }
+  .btn-danger:hover { background: var(--danger); color: white; }
+  .btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; color: var(--muted); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 0.78rem; font-weight: 600; }
+  .badge-green { background: #14532d; color: var(--accent); }
+  .badge-yellow { background: #422006; color: var(--warn); }
+  .badge-red { background: #450a0a; color: var(--danger); }
+
+  /* RECOMMENDATIONS */
+  .rec-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 12px; }
+  .rec-crop { font-weight: 700; font-size: 1.05rem; }
+  .rec-detail { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+  .rec-number { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .rec-label { font-size: 0.75rem; color: var(--muted); text-align: right; }
+
+  /* PROGRESS BAR */
+  .bar-bg { background: var(--surface2); border-radius: 99px; height: 8px; margin-top: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty p { margin-bottom: 16px; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: #0f1117; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; z-index: 999; }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 600px) {
+    .nav-links { gap: 0; }
+    .nav-btn { padding: 8px 10px; font-size: 0.8rem; }
+    h1 { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Crop<span>IQ</span></div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showPage('log')">Log Cycle</button>
+    <button class="nav-btn" onclick="showPage('history')">History</button>
+    <button class="nav-btn" onclick="showPage('recommend')">Recommendations</button>
+    <button class="nav-btn" onclick="showPage('sheet')">Worker Sheet</button>
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<!-- ===== DASHBOARD ===== -->
+<div class="page active" id="page-dashboard">
+  <h1>Dashboard</h1>
+  <p class="subtitle">Overview of your farm's performance across all logged cycles.</p>
+  <div class="card-grid" id="dash-stats"></div>
+  <div class="card">
+    <h2>Crop Performance Summary</h2>
+    <div class="table-wrap" id="dash-table-wrap">
+      <div class="empty"><div class="empty-icon">🌱</div><p>No cycles logged yet. Head to <strong>Log Cycle</strong> to get started.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOG CYCLE ===== -->
+<div class="page" id="page-log">
+  <h1>Log a Crop Cycle</h1>
+  <p class="subtitle">Enter data for one crop cycle. Each entry helps CropIQ give you better planting recommendations.</p>
+  <div class="card">
+    <h2>Cycle Details</h2>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column: span 2;">
+        <label>Crop Name</label>
+        <input type="text" id="log-crop" placeholder="e.g. Tomatoes, Lettuce, Kale..."/>
+      </div>
+      <div class="form-group">
+        <label>Date Planted</label>
+        <input type="date" id="log-planted-date"/>
+      </div>
+      <div class="form-group">
+        <label>Date Harvested</label>
+        <input type="date" id="log-harvested-date"/>
+      </div>
+      <div class="form-group">
+        <label>Seeds / Seedlings Bought</label>
+        <input type="number" id="log-bought" placeholder="0" min="0"/>
+      </div>
+      <div class="form-group">
+        <label>Plants Actually Planted</label>
+        <input type="number" id="log-planted" placeholder="0" min="0"/>
+      </div>
+      <div class="form-group">
+        <label>Plants That Died</label>
+        <input type="number" id="log-died" placeholder="0" min="0"/>
+      </div>
+      <div class="form-group">
+        <label>Units Harvested</label>
+        <input type="number" id="log-harvested" placeholder="0" min="0"/>
+      </div>
+      <div class="form-group">
+        <label>Units Sold</label>
+        <input type="number" id="log-sold" placeholder="0" min="0"/>
+      </div>
+      <div class="form-group">
+        <label>Units Donated</label>
+        <input type="number" id="log-donated" placeholder="0" min="0"/>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="logCycle()">Save Cycle</button>
+      <button class="btn btn-secondary" onclick="clearLogForm()">Clear</button>
+    </div>
+  </div>
+  <div class="card" id="log-preview" style="display:none;">
+    <h2>Live Preview</h2>
+    <div id="log-preview-content"></div>
+  </div>
+</div>
+
+<!-- ===== HISTORY ===== -->
+<div class="page" id="page-history">
+  <h1>Cycle History</h1>
+  <p class="subtitle">All logged crop cycles. Delete any entry to remove it from calculations.</p>
+  <div class="card">
+    <div class="table-wrap" id="history-table-wrap">
+      <div class="empty"><div class="empty-icon">📋</div><p>No cycles logged yet.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RECOMMENDATIONS ===== -->
+<div class="page" id="page-recommend">
+  <h1>Planting Recommendations</h1>
+  <p class="subtitle">Based on your historical data, here's how many of each crop to plant next cycle.</p>
+  <div id="rec-content">
+    <div class="empty"><div class="empty-icon">🤖</div><p>Log at least one crop cycle to generate recommendations.</p></div>
+  </div>
+</div>
+
+<!-- ===== WORKER SHEET ===== -->
+<div class="page" id="page-sheet">
+  <h1>Printable Worker Sheet</h1>
+  <p class="subtitle">Print this sheet and give it to farm workers to fill out each cycle. Then enter the data into Log Cycle.</p>
+  <div class="btn-row" style="margin-bottom:20px;">
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Print Sheet</button>
+  </div>
+  <div class="card" id="print-sheet">
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="font-size:1.6rem; font-weight:800; color:var(--accent);">CropIQ <span style="color:var(--text);">— Farm Data Sheet</span></div>
+      <div style="color:var(--muted); margin-top:4px;">Fill out one sheet per crop, per growing cycle. Return to farm manager.</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+      <div><label>Crop Name</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+      <div><label>Worker Name (optional)</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+      <div><label>Date Planted</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+      <div><label>Date Harvested</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+    </div>
+    <hr class="divider"/>
+    <h2 style="margin-bottom:16px;">Planting Data</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
+      <div><label>Seeds / Seedlings Bought</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+      <div><label>Plants Actually Planted</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+      <div><label>Plants That Died</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+    </div>
+    <hr class="divider"/>
+    <h2 style="margin-bottom:16px;">Harvest & Sales Data</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px;">
+      <div><label>Units Harvested</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+      <div><label>Units Sold</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+      <div><label>Units Donated (unsold)</label><div style="border-bottom:1px solid var(--border); height:32px; margin-top:6px;"></div></div>
+    </div>
+    <hr class="divider"/>
+    <h2 style="margin-bottom:12px;">Notes</h2>
+    <div style="border:1px solid var(--border); border-radius:8px; height:80px; margin-bottom:8px;"></div>
+    <div style="color:var(--muted); font-size:0.8rem; text-align:center;">CropIQ — Smart Farm Planning</div>
+  </div>
+</div>
+
+<script>
+// ===== API =====
+const API = '';  // empty = same origin (works locally and on Railway)
+
+async function apiFetch(path, opts={}) {
+  const res = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ===== NAV =====
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if(id === 'dashboard') renderDashboard();
+  if(id === 'history') renderHistory();
+  if(id === 'recommend') renderRecommendations();
+}
+
+// ===== TOAST =====
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== LOG =====
+function logCycle() {
+  const crop = document.getElementById('log-crop').value.trim();
+  const plantedDate = document.getElementById('log-planted-date').value;
+  const harvestedDate = document.getElementById('log-harvested-date').value;
+  const bought = +document.getElementById('log-bought').value || 0;
+  const planted = +document.getElementById('log-planted').value || 0;
+  const died = +document.getElementById('log-died').value || 0;
+  const harvested = +document.getElementById('log-harvested').value || 0;
+  const sold = +document.getElementById('log-sold').value || 0;
+  const donated = +document.getElementById('log-donated').value || 0;
+
+  if(!crop) { toast('Please enter a crop name.'); return; }
+  if(!planted) { toast('Please enter plants planted.'); return; }
+  if(!harvested) { toast('Please enter units harvested.'); return; }
+
+  const days = (plantedDate && harvestedDate)
+    ? Math.round((new Date(harvestedDate) - new Date(plantedDate)) / 86400000)
+    : null;
+
+  cycles.push({ id: Date.now(), crop, plantedDate, harvestedDate, days, bought, planted, died, harvested, sold, donated, loggedAt: new Date().toISOString() });
+  save();
+  toast('Cycle saved for ' + crop + '!');
+  clearLogForm();
+}
+
+function clearLogForm() {
+  ['log-crop','log-planted-date','log-harvested-date','log-bought','log-planted','log-died','log-harvested','log-sold','log-donated'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('log-preview').style.display = 'none';
+}
+
+// ===== CALCULATIONS =====
+function getCropStats() {
+  const map = {};
+  cycles.forEach(c => {
+    if(!map[c.crop]) map[c.crop] = [];
+    map[c.crop].push(c);
+  });
+  const stats = {};
+  Object.keys(map).forEach(crop => {
+    const cs = map[crop];
+    const n = cs.length;
+    // exponential moving average weight: more recent = more weight
+    const sellThrough = ema(cs.map(c => c.harvested > 0 ? c.sold / c.harvested : 0));
+    const mortalityRate = ema(cs.map(c => c.planted > 0 ? c.died / c.planted : 0));
+    const yieldRate = ema(cs.map(c => c.planted > 0 ? c.harvested / c.planted : 0));
+    const avgSold = ema(cs.map(c => c.sold));
+    const avgCycleDays = cs.filter(c=>c.days).length > 0 ? Math.round(cs.filter(c=>c.days).reduce((a,b)=>a+b.days,0)/cs.filter(c=>c.days).length) : null;
+    // Recommended plants = target demand / yield rate, adjusted for sell-through
+    const targetDemand = avgSold;
+    const safeYield = yieldRate > 0 ? yieldRate : 0.5;
+    const recommended = Math.ceil(targetDemand / safeYield);
+    stats[crop] = { cycles: n, sellThrough, mortalityRate, yieldRate, avgSold, avgCycleDays, recommended };
+  });
+  return stats;
+}
+
+function ema(arr) {
+  if(!arr.length) return 0;
+  if(arr.length === 1) return arr[0];
+  const alpha = 0.6;
+  let val = arr[0];
+  for(let i = 1; i < arr.length; i++) val = alpha * arr[i] + (1 - alpha) * val;
+  return val;
+}
+
+function pct(v) { return (v * 100).toFixed(1) + '%'; }
+function round(v) { return Math.round(v); }
+
+function sellBadge(r) {
+  if(r >= 0.75) return '<span class="badge badge-green">Strong</span>';
+  if(r >= 0.4) return '<span class="badge badge-yellow">Moderate</span>';
+  return '<span class="badge badge-red">Weak</span>';
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const stats = document.getElementById('dash-stats');
+  const tableWrap = document.getElementById('dash-table-wrap');
+  const totalCycles = cycles.length;
+  const crops = [...new Set(cycles.map(c => c.crop))].length;
+  const totalSold = cycles.reduce((a,b) => a + b.sold, 0);
+  const totalDonated = cycles.reduce((a,b) => a + b.donated, 0);
+
+  stats.innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Cycles Logged</div><div class="stat-value blue">${totalCycles}</div></div>
+    <div class="stat-card"><div class="stat-label">Unique Crops</div><div class="stat-value green">${crops}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Units Sold</div><div class="stat-value green">${totalSold}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Units Donated</div><div class="stat-value yellow">${totalDonated}</div></div>
+  `;
+
+  if(!cycles.length) { tableWrap.innerHTML = '<div class="empty"><div class="empty-icon">🌱</div><p>No cycles logged yet. Head to <strong>Log Cycle</strong> to get started.</p></div>'; return; }
+
+  const cs = getCropStats();
+  let rows = Object.keys(cs).map(crop => {
+    const s = cs[crop];
+    const st = s.sellThrough;
+    const barColor = st >= 0.75 ? '#4ade80' : st >= 0.4 ? '#facc15' : '#f87171';
+    return `<tr>
+      <td><strong>${crop}</strong></td>
+      <td>${s.cycles}</td>
+      <td>${pct(s.sellThrough)} <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(st*100,100)}%;background:${barColor}"></div></div></td>
+      <td>${pct(s.mortalityRate)}</td>
+      <td>${pct(s.yieldRate)}</td>
+      <td>${round(s.avgSold)}</td>
+      <td>${sellBadge(s.sellThrough)}</td>
+    </tr>`;
+  }).join('');
+
+  tableWrap.innerHTML = `<table>
+    <thead><tr><th>Crop</th><th>Cycles</th><th>Sell-Through</th><th>Mortality</th><th>Yield Rate</th><th>Avg Sold</th><th>Status</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ===== HISTORY =====
+function renderHistory() {
+  const wrap = document.getElementById('history-table-wrap');
+  if(!cycles.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No cycles logged yet.</p></div>'; return; }
+  const rows = [...cycles].reverse().map(c => `<tr>
+    <td><strong>${c.crop}</strong></td>
+    <td>${c.plantedDate || '—'}</td>
+    <td>${c.harvestedDate || '—'}</td>
+    <td>${c.days != null ? c.days + ' days' : '—'}</td>
+    <td>${c.planted}</td>
+    <td>${c.died}</td>
+    <td>${c.harvested}</td>
+    <td>${c.sold}</td>
+    <td>${c.donated}</td>
+    <td><button class="btn btn-danger" onclick="deleteCycle(${c.id})">Delete</button></td>
+  </tr>`).join('');
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Crop</th><th>Planted</th><th>Harvested</th><th>Duration</th><th>Planted</th><th>Died</th><th>Harvested</th><th>Sold</th><th>Donated</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function deleteCycle(id) {
+  cycles = cycles.filter(c => c.id !== id);
+  save();
+  renderHistory();
+  toast('Entry deleted.');
+}
+
+// ===== RECOMMENDATIONS =====
+function renderRecommendations() {
+  const wrap = document.getElementById('rec-content');
+  if(!cycles.length) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">🤖</div><p>Log at least one crop cycle to generate recommendations.</p></div>'; return; }
+  const cs = getCropStats();
+  const sorted = Object.keys(cs).sort((a,b) => cs[b].avgSold - cs[a].avgSold);
+  wrap.innerHTML = sorted.map(crop => {
+    const s = cs[crop];
+    const confidence = s.cycles >= 3 ? '<span class="badge badge-green">High Confidence</span>' : s.cycles === 2 ? '<span class="badge badge-yellow">Medium Confidence</span>' : '<span class="badge badge-red">Low Confidence (need more data)</span>';
+    const notes = [];
+    if(s.sellThrough < 0.5) notes.push('⚠️ High donation rate — consider planting fewer');
+    if(s.mortalityRate > 0.3) notes.push('⚠️ High mortality — improve growing conditions or add buffer');
+    if(s.cycles < 3) notes.push('ℹ️ Log more cycles for higher accuracy');
+    return `<div class="rec-card">
+      <div>
+        <div class="rec-crop">${crop}</div>
+        <div class="rec-detail">Based on ${s.cycles} cycle${s.cycles>1?'s':''} &nbsp;·&nbsp; Avg sold: ${round(s.avgSold)} &nbsp;·&nbsp; Yield rate: ${pct(s.yieldRate)}</div>
+        <div style="margin-top:8px;">${confidence}</div>
+        ${notes.length ? `<div style="margin-top:8px;font-size:0.82rem;color:var(--muted);">${notes.join('<br>')}</div>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <div class="rec-number">${s.recommended}</div>
+        <div class="rec-label">plants to plant</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== INIT =====
+load();
+renderDashboard();
+</script>
+</body>
+</html>
