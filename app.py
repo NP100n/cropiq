@@ -58,15 +58,6 @@ def ema(values, alpha=0.6):
     return result
 
 def compute_stats(crop_cycles):
-    """
-    Given a list of Cycle objects for one crop, compute:
-    - sell_through_rate  (sold / harvested)
-    - mortality_rate     (died / planted)
-    - yield_rate         (harvested / planted)
-    - avg_sold           (EMA of units sold per cycle)
-    - recommended        (how many to plant next cycle)
-    - confidence         (based on number of cycles logged)
-    """
     n = len(crop_cycles)
 
     sell_throughs  = [c.sold / c.harvested if c.harvested > 0 else 0 for c in crop_cycles]
@@ -81,18 +72,11 @@ def compute_stats(crop_cycles):
     avg_sold      = ema(sold_vals)
     avg_days      = round(sum(days_vals) / len(days_vals)) if days_vals else None
 
-    # Core recommendation formula:
-    # target_demand = EMA of past sold (what the market actually absorbs)
-    # safe_yield    = EMA yield rate (how many plants actually produce)
-    # recommended   = ceil(target_demand / safe_yield)
-    # This ensures we plant enough to meet demand even accounting for die-off
     safe_yield   = yield_rate if yield_rate > 0 else 0.5
     recommended  = math.ceil(avg_sold / safe_yield)
 
-    # Confidence tier
     confidence = 'high' if n >= 4 else 'medium' if n >= 2 else 'low'
 
-    # Warnings
     warnings = []
     if sell_through < 0.5:
         warnings.append('High donation rate — consider reducing planting target')
@@ -117,15 +101,17 @@ def compute_stats(crop_cycles):
 
 @app.route('/')
 def index():
-    return send_from_directory('frontend', 'index.html')
+    return send_from_directory('frontend', 'index.html', max_age=0)
 
-# Get all cycles
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('frontend', path)
+
 @app.route('/api/cycles', methods=['GET'])
 def get_cycles():
     cycles = Cycle.query.order_by(Cycle.logged_at.desc()).all()
     return jsonify([c.to_dict() for c in cycles])
 
-# Add a new cycle
 @app.route('/api/cycles', methods=['POST'])
 def add_cycle():
     d = request.get_json()
@@ -157,7 +143,6 @@ def add_cycle():
     db.session.commit()
     return jsonify(cycle.to_dict()), 201
 
-# Delete a cycle
 @app.route('/api/cycles/<int:cycle_id>', methods=['DELETE'])
 def delete_cycle(cycle_id):
     cycle = Cycle.query.get_or_404(cycle_id)
@@ -165,34 +150,27 @@ def delete_cycle(cycle_id):
     db.session.commit()
     return jsonify({'deleted': cycle_id})
 
-# Get recommendations for all crops
 @app.route('/api/recommendations', methods=['GET'])
 def get_recommendations():
     all_cycles = Cycle.query.order_by(Cycle.logged_at.asc()).all()
     crop_map = {}
     for c in all_cycles:
         crop_map.setdefault(c.crop, []).append(c)
-
     results = {}
     for crop, cycles in crop_map.items():
         results[crop] = compute_stats(cycles)
-
     return jsonify(results)
 
-# Get dashboard summary stats
 @app.route('/api/dashboard', methods=['GET'])
 def get_dashboard():
     all_cycles = Cycle.query.all()
     total_sold    = sum(c.sold    for c in all_cycles)
     total_donated = sum(c.donated for c in all_cycles)
     unique_crops  = len(set(c.crop for c in all_cycles))
-
     crop_map = {}
     for c in all_cycles:
         crop_map.setdefault(c.crop, []).append(c)
-
     crop_stats = {crop: compute_stats(cycs) for crop, cycs in crop_map.items()}
-
     return jsonify({
         'total_cycles':  len(all_cycles),
         'unique_crops':  unique_crops,
